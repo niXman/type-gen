@@ -4,7 +4,7 @@ CONFIG += console c++14
 CONFIG -= app_bundle
 CONFIG -= qt
 
-QMAKE_CXXFLAGS += -save-temps
+#QMAKE_CXXFLAGS += -save-temps
 
 INCLUDEPATH += \
     include

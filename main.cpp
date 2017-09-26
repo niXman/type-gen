@@ -7,6 +7,12 @@
 #include <string>
 #include <type_traits>
 
+#define TEST_EXPR(cond) \
+    if ( cond ) { \
+        std::cerr << __FILE__ << "(" << __LINE__ << "): expression error: " << #cond << std::endl; \
+        return false; \
+    }
+
 /***************************************************************************/
 
 TYPE_GEN_TYPE(
@@ -22,13 +28,9 @@ bool test_init() {
     type0 t0;
 
     int v{};
-    if ( t0.a != v ) {
-        return false;
-    }
+    TEST_EXPR(t0.a != v);
 
-    if ( t0.b != 3.14 ) {
-        return false;
-    }
+    TEST_EXPR(t0.b != 3.14);
 
     return true;
 }
@@ -38,15 +40,11 @@ bool test_init() {
 bool test_equal() {
     type0 t0, t1;
 
-    if ( t0 != t1 ) {
-        return false;
-    }
+    TEST_EXPR(t0 != t1);
 
     t1.a = 1; t1.b = 2;
 
-    if ( t0 == t1 ) {
-        return false;
-    }
+    TEST_EXPR(t0 == t1);
 
     return true;
 }
@@ -62,9 +60,7 @@ bool test_compare() {
             ++cnt;
         }
     );
-    if ( !ok || cnt != 0 ) {
-        return false;
-    }
+    TEST_EXPR(!ok || cnt != 0);
 
     cnt = 0;
     t1.a = 1; t1.b = 2;
@@ -76,15 +72,11 @@ bool test_compare() {
             memnames.push_back(memname);
         }
     );
-    if ( ok || cnt != t0._members_count() ) {
-        return false;
-    }
-    if ( cnt != memnames.size() ) {
-        return false;
-    }
-    if ( memnames[0] != "a" || memnames[1] != "b" ) {
-        return false;
-    }
+    TEST_EXPR(ok || cnt != t0._members_count());
+
+    TEST_EXPR(cnt != memnames.size());
+
+    TEST_EXPR(memnames[0] != "a" || memnames[1] != "b");
 
     return true;
 }
@@ -104,17 +96,11 @@ bool test_apply() {
         }
     );
 
-    if ( memnames.size() != t0._members_count() || memaddrs.size() != t0._members_count() ) {
-        return false;
-    }
+    TEST_EXPR(memnames.size() != t0._members_count() || memaddrs.size() != t0._members_count());
 
-    if ( memnames[0] != "a" || memnames[1] != "b" ) {
-        return false;
-    }
+    TEST_EXPR(memnames[0] != "a" || memnames[1] != "b");
 
-    if ( memaddrs[0] != &(t0.a) || memaddrs[1] != &(t0.b) ) {
-        return false;
-    }
+    TEST_EXPR(memaddrs[0] != &(t0.a) || memaddrs[1] != &(t0.b));
 
     return true;
 }
@@ -149,13 +135,9 @@ bool test_serialize() {
     serializer s;
     s & t0;
 
-    if ( s.addrs.size() != t0._members_count() ) {
-        return false;
-    }
+    TEST_EXPR(s.addrs.size() != t0._members_count());
 
-    if ( s.addrs[0] != &(t0.a) || s.addrs[1] != &(t0.b) ) {
-        return false;
-    }
+    TEST_EXPR(s.addrs[0] != &(t0.a) || s.addrs[1] != &(t0.b));
 
     return true;
 }
@@ -180,17 +162,13 @@ bool test_typeinfo_equal() {
     typegen::typeinfo<type1> ti0(t0);
     typegen::typeinfo<type1> ti1(t1);
 
-    if ( ti0 != ti1 ) {
-        return false;
-    }
+    TEST_EXPR(ti0 != ti1);
 
     t0.a = 1; t0.b = 2;
 
-    if ( ti0 == ti1 ) {
-        return false;
-    }
-    return true;
+    TEST_EXPR(ti0 == ti1);
 
+    return true;
 }
 
 /***************************************************************************/
@@ -207,9 +185,7 @@ bool test_typeinfo_compare() {
             ++cnt;
         }
     );
-    if ( !ok || cnt != 0 ) {
-        return false;
-    }
+    TEST_EXPR(!ok || cnt != 0);
 
     cnt = 0;
     t1.a = 1; t1.b = 2;
@@ -221,15 +197,11 @@ bool test_typeinfo_compare() {
             memnames.push_back(memname);
         }
     );
-    if ( ok || cnt != ti0._members_count() ) {
-        return false;
-    }
-    if ( cnt != memnames.size() ) {
-        return false;
-    }
-    if ( memnames[0] != "a" || memnames[1] != "b" ) {
-        return false;
-    }
+    TEST_EXPR(ok || cnt != ti0._members_count());
+
+    TEST_EXPR(cnt != memnames.size());
+
+    TEST_EXPR(memnames[0] != "a" || memnames[1] != "b");
 
     return true;
 }
@@ -251,39 +223,27 @@ bool test_typeinfo_apply() {
         }
     );
 
-    if ( memnames.size() != ti0._members_count() || memaddrs.size() != ti0._members_count() ) {
-        return false;
-    }
+    TEST_EXPR(memnames.size() != ti0._members_count() || memaddrs.size() != ti0._members_count());
 
-    if ( memnames[0] != "a" || memnames[1] != "b" ) {
-        return false;
-    }
+    TEST_EXPR(memnames[0] != "a" || memnames[1] != "b");
 
-    if ( memaddrs[0] != &(t0.a) || memaddrs[1] != &(t0.b) ) {
-        return false;
-    }
+    TEST_EXPR(memaddrs[0] != &(t0.a) || memaddrs[1] != &(t0.b));
 
     return true;
 }
 
 /***************************************************************************/
 
-#define TEST(...) \
-    if ( !(__VA_ARGS__) ) { \
-        std::cerr << "expression error(" __FILE__ ":" BOOST_PP_STRINGIZE(__LINE__) "): \"" #__VA_ARGS__ "\"" << std::endl; \
-        std::abort(); \
-    }
-
 int main() {
-    TEST(test_init() == true)
-    TEST(test_equal() == true)
-    TEST(test_compare() == true)
-    TEST(test_apply() == true)
-    TEST(test_serialize() == true)
+    TEST_EXPR(test_init() != true);
+    TEST_EXPR(test_equal() != true)
+    TEST_EXPR(test_compare() != true)
+    TEST_EXPR(test_apply() != true)
+    TEST_EXPR(test_serialize() != true)
 
-    TEST(test_typeinfo_equal() == true)
-    TEST(test_typeinfo_compare() == true)
-    TEST(test_typeinfo_apply() == true)
+    TEST_EXPR(test_typeinfo_equal() != true)
+    TEST_EXPR(test_typeinfo_compare() != true)
+    TEST_EXPR(test_typeinfo_apply() != true)
 }
 
 /***************************************************************************/
