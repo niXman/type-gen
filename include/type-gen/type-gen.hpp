@@ -74,34 +74,57 @@
 
 /***************************************************************************/
 
-#define TYPE_GEN_TYPE_GEN_TUPLE_ELEMS_CB(unused0, unused1, idx, elem) \
-    BOOST_PP_COMMA_IF(idx) \
-        BOOST_PP_TUPLE_ENUM(BOOST_PP_TUPLE_ELEM(0, elem))
+#define TYPE_GEN_TYPE_GEN_TUPLE_ELEMS_FOR_TI(tname, elem) \
+    decltype(tname::BOOST_PP_TUPLE_ELEM(0, elem))
 
-#define TYPE_GEN_TYPE_GEN_TUPLE_ELEMS_IMPL(seq) \
+#define TYPE_GEN_TYPE_GEN_TUPLE_ELEMS_NOT_FOR_TI(tname, elem) \
+    BOOST_PP_TUPLE_ENUM(BOOST_PP_TUPLE_ELEM(0, elem))
+
+#define TYPE_GEN_TYPE_GEN_TUPLE_ELEMS_CB(unused0, data, idx, elem) \
+    BOOST_PP_COMMA_IF(idx) \
+        BOOST_PP_IF( \
+             BOOST_PP_TUPLE_ELEM(1, data) \
+            ,TYPE_GEN_TYPE_GEN_TUPLE_ELEMS_FOR_TI \
+            ,TYPE_GEN_TYPE_GEN_TUPLE_ELEMS_NOT_FOR_TI \
+        )(BOOST_PP_TUPLE_ELEM(0, data), elem)
+
+#define TYPE_GEN_TYPE_GEN_TUPLE_ELEMS_IMPL(tname, for_ti, seq) \
     BOOST_PP_SEQ_FOR_EACH_I( \
         TYPE_GEN_TYPE_GEN_TUPLE_ELEMS_CB \
-        ,~ \
+        ,(tname, for_ti) \
         ,seq \
     )
 
-#define TYPE_GEN_TYPE_GEN_TUPLE_ELEMS(tuplename, seq) \
-    using tuplename = std::tuple<TYPE_GEN_TYPE_GEN_TUPLE_ELEMS_IMPL(seq)>;
+#define TYPE_GEN_TYPE_GEN_TUPLE_ELEMS(tname, for_ti, tuplename, seq) \
+    using tuplename = std::tuple<TYPE_GEN_TYPE_GEN_TUPLE_ELEMS_IMPL(tname, for_ti, seq)>;
 
 /***************************************************************************/
 
-#define TYPE_GEN_TYPE_ENUMERATE_APPLIED(unused0, data, unused1, elem) \
+#define TYPE_GEN_TYPE_GEN_APPLY_FUNCTIONS_CB(unused0, data, unused1, elem) \
     f( \
-         BOOST_PP_STRINGIZE(BOOST_PP_TUPLE_ELEM(1, elem)) \
-        ,BOOST_PP_IF(BOOST_PP_TUPLE_ELEM(0, data), m_o, BOOST_PP_TUPLE_ELEM(1, data)) \
-            .BOOST_PP_TUPLE_ELEM(1, elem) \
+         BOOST_PP_STRINGIZE( /* member name */ \
+            BOOST_PP_IF( \
+                 BOOST_PP_TUPLE_ELEM(0, data) \
+                ,BOOST_PP_TUPLE_ELEM(0, elem) \
+                ,BOOST_PP_TUPLE_ELEM(1, elem) \
+            ) \
+        ) \
+        ,BOOST_PP_IF( \
+             BOOST_PP_TUPLE_ELEM(0, data) \
+            ,m_o \
+            ,BOOST_PP_TUPLE_ELEM(1, data) \
+        ).BOOST_PP_IF( \
+             BOOST_PP_TUPLE_ELEM(0, data) \
+            ,BOOST_PP_TUPLE_ELEM(0, elem) \
+            ,BOOST_PP_TUPLE_ELEM(1, elem) \
+        ) /* member var */ \
     );
 
 #define TYPE_GEN_TYPE_GEN_APPLY_FUNCTIONS(for_ti, obj, seq) \
     template<typename F> /* void(const char *memname, const T &v) */ \
     void apply(F &&f) const { \
         BOOST_PP_SEQ_FOR_EACH_I( \
-             TYPE_GEN_TYPE_ENUMERATE_APPLIED \
+             TYPE_GEN_TYPE_GEN_APPLY_FUNCTIONS_CB \
             ,(for_ti, obj) \
             ,seq \
         ) \
@@ -109,7 +132,7 @@
     template<typename F> /* void(const char *memname, T &v) */ \
     void apply(F &&f) { \
         BOOST_PP_SEQ_FOR_EACH_I( \
-             TYPE_GEN_TYPE_ENUMERATE_APPLIED \
+             TYPE_GEN_TYPE_GEN_APPLY_FUNCTIONS_CB \
             ,(for_ti, obj) \
             ,seq \
         ) \
@@ -117,18 +140,27 @@
 
 /***************************************************************************/
 
-#define TYPE_GEN_TYPE_ENUMERATE_EQUAL(unused, data, idx, elem) \
+#define TYPE_GEN_TYPE_GEN_OPERATOR_EQUAL_NOTEQUAL_CB(unused, data, idx, elem) \
     BOOST_PP_IF(idx, &&, ) \
         BOOST_PP_IF(BOOST_PP_TUPLE_ELEM(0, data), m_o, BOOST_PP_TUPLE_ELEM(1, data)) \
-            .BOOST_PP_TUPLE_ELEM(1, elem) == \
+            .BOOST_PP_IF( \
+                 BOOST_PP_TUPLE_ELEM(0, data) \
+                ,BOOST_PP_TUPLE_ELEM(0, elem) \
+                ,BOOST_PP_TUPLE_ELEM(1, elem) \
+            ) \
+            == \
                 BOOST_PP_IF(BOOST_PP_TUPLE_ELEM(0, data), r.m_o, r) \
-                    .BOOST_PP_TUPLE_ELEM(1, elem)
+                    .BOOST_PP_IF( \
+                         BOOST_PP_TUPLE_ELEM(0, data) \
+                        ,BOOST_PP_TUPLE_ELEM(0, elem) \
+                        ,BOOST_PP_TUPLE_ELEM(1, elem) \
+                    )
 
 #define TYPE_GEN_TYPE_GEN_OPERATOR_EQUAL_NOTEQUAL(tname, for_ti, obj, seq) \
     bool operator== (const BOOST_PP_IF(for_ti, ::typegen::typeinfo<tname>, tname) &r) const { \
         return \
             BOOST_PP_SEQ_FOR_EACH_I( \
-                 TYPE_GEN_TYPE_ENUMERATE_EQUAL \
+                 TYPE_GEN_TYPE_GEN_OPERATOR_EQUAL_NOTEQUAL_CB \
                 ,(for_ti, obj) \
                 ,seq \
             ) \
@@ -142,43 +174,58 @@
 
 #define TYPE_GEN_TYPE_ENUMERATE_MEMBERS_CB(unused, data, idx, elem) \
     BOOST_PP_COMMA_IF(idx) \
-        std::ref(data.BOOST_PP_TUPLE_ELEM(1, elem))
+        std::ref( \
+            BOOST_PP_TUPLE_ELEM(1, data) \
+            . \
+            BOOST_PP_IF( \
+                 BOOST_PP_TUPLE_ELEM(0, data) \
+                ,BOOST_PP_TUPLE_ELEM(0, elem) \
+                ,BOOST_PP_TUPLE_ELEM(1, elem) \
+            ) \
+        )
 
-#define TYPE_GEN_TYPE_ENUMERATE_MEMBERS(obj, seq) \
+#define TYPE_GEN_TYPE_ENUMERATE_MEMBERS(for_ti, obj, seq) \
     BOOST_PP_SEQ_FOR_EACH_I( \
          TYPE_GEN_TYPE_ENUMERATE_MEMBERS_CB \
-        ,obj \
+        ,(for_ti, obj) \
         ,seq \
     )
 
-#define TYPE_GEN_TYPE_GEN_GET_MEMBERS(obj, seq) \
+#define TYPE_GEN_TYPE_GEN_GET_MEMBERS(for_ti, obj, seq) \
     template< \
          std::size_t I \
         ,typename T = typename std::tuple_element<I, types_as_tuple>::type> \
     T& get_member() { \
-        auto t = std::make_tuple(TYPE_GEN_TYPE_ENUMERATE_MEMBERS(obj, seq)); \
+        auto t = std::make_tuple(TYPE_GEN_TYPE_ENUMERATE_MEMBERS(for_ti, obj, seq)); \
         return std::get<I>(t); \
     } \
     template< \
          std::size_t I \
         ,typename T = typename std::tuple_element<I, types_as_tuple>::type> \
     const T& get_member() const { \
-        const auto t = std::make_tuple(TYPE_GEN_TYPE_ENUMERATE_MEMBERS(obj, seq)); \
+        const auto t = std::make_tuple(TYPE_GEN_TYPE_ENUMERATE_MEMBERS(for_ti, obj, seq)); \
         return std::get<I>(t); \
     }
 
 /***************************************************************************/
 
-#define TYPE_GEN_TYPE_ENUMERATE_COMPARE_MEMBERS(unused0, data, unused1, elem) \
-    if ( BOOST_PP_IF(BOOST_PP_TUPLE_ELEM(0, data), BOOST_PP_TUPLE_ELEM(1, data)., ) BOOST_PP_TUPLE_ELEM(1, elem) \
+#define TYPE_GEN_TYPE_GEN_COMPARE_CB(unused0, data, unused1, elem) \
+    if ( BOOST_PP_IF(BOOST_PP_TUPLE_ELEM(0, data), BOOST_PP_TUPLE_ELEM(1, data)., ) \
+            BOOST_PP_IF(BOOST_PP_TUPLE_ELEM(0, data), BOOST_PP_TUPLE_ELEM(0, elem), BOOST_PP_TUPLE_ELEM(1, elem)) \
         != \
-        r. BOOST_PP_IF(BOOST_PP_TUPLE_ELEM(0, data), BOOST_PP_TUPLE_ELEM(1, data)., ) BOOST_PP_TUPLE_ELEM(1, elem) \
+        r. BOOST_PP_IF(BOOST_PP_TUPLE_ELEM(0, data), BOOST_PP_TUPLE_ELEM(1, data)., ) \
+            BOOST_PP_IF(BOOST_PP_TUPLE_ELEM(0, data), BOOST_PP_TUPLE_ELEM(0, elem), BOOST_PP_TUPLE_ELEM(1, elem)) \
     ) { \
         res = false; \
         f( \
-             BOOST_PP_STRINGIZE(BOOST_PP_TUPLE_ELEM(1, elem)) \
-            ,BOOST_PP_IF(BOOST_PP_TUPLE_ELEM(0, data), BOOST_PP_TUPLE_ELEM(1, data)., ) BOOST_PP_TUPLE_ELEM(1, elem) \
-            ,r. BOOST_PP_IF(BOOST_PP_TUPLE_ELEM(0, data), BOOST_PP_TUPLE_ELEM(1, data)., ) BOOST_PP_TUPLE_ELEM(1, elem) \
+            BOOST_PP_STRINGIZE( \
+                BOOST_PP_IF(BOOST_PP_TUPLE_ELEM(0, data), BOOST_PP_TUPLE_ELEM(0, elem), BOOST_PP_TUPLE_ELEM(1, elem)) \
+            ) \
+            ,BOOST_PP_IF(BOOST_PP_TUPLE_ELEM(0, data), BOOST_PP_TUPLE_ELEM(1, data)., ) \
+                BOOST_PP_IF(BOOST_PP_TUPLE_ELEM(0, data), BOOST_PP_TUPLE_ELEM(0, elem), BOOST_PP_TUPLE_ELEM(1, elem)) \
+            \
+            ,r. BOOST_PP_IF(BOOST_PP_TUPLE_ELEM(0, data), BOOST_PP_TUPLE_ELEM(1, data)., ) \
+                BOOST_PP_IF(BOOST_PP_TUPLE_ELEM(0, data), BOOST_PP_TUPLE_ELEM(0, elem), BOOST_PP_TUPLE_ELEM(1, elem)) \
         ); \
     }
 
@@ -187,7 +234,7 @@
     bool compare(const BOOST_PP_IF(for_ti, ::typegen::typeinfo<tname>, tname) &r, F &&f) const { \
         bool res = true; \
         BOOST_PP_SEQ_FOR_EACH_I( \
-             TYPE_GEN_TYPE_ENUMERATE_COMPARE_MEMBERS \
+             TYPE_GEN_TYPE_GEN_COMPARE_CB \
             ,(for_ti, obj) \
             ,seq \
         ) \
@@ -196,16 +243,21 @@
 
 /***************************************************************************/
 
-#define TYPE_GEN_TYPE_ENUMERATE_SERIALIZED(unused, data, idx, elem) \
-    & data.BOOST_PP_TUPLE_ELEM(1, elem)
+#define TYPE_GEN_TYPE_GEN_SERIALIZE_FUNCTIONS_CB(unused, data, idx, elem) \
+    & BOOST_PP_TUPLE_ELEM(1, data) \
+        .BOOST_PP_IF( \
+             BOOST_PP_TUPLE_ELEM(0, data) \
+            ,BOOST_PP_TUPLE_ELEM(0, elem) \
+            ,BOOST_PP_TUPLE_ELEM(1, elem) \
+        )
 
 #define TYPE_GEN_TYPE_GEN_SERIALIZE_FUNCTIONS(for_ti, obj, seq) \
     template<typename Archive> \
     void serialize(Archive &ar) const { \
         ar \
             BOOST_PP_SEQ_FOR_EACH_I( \
-                 TYPE_GEN_TYPE_ENUMERATE_SERIALIZED \
-                ,obj \
+                 TYPE_GEN_TYPE_GEN_SERIALIZE_FUNCTIONS_CB \
+                ,(for_ti, obj)\
                 ,seq \
             ) \
         ; \
@@ -214,8 +266,8 @@
     void serialize(Archive &ar) { \
         ar \
             BOOST_PP_SEQ_FOR_EACH_I( \
-                 TYPE_GEN_TYPE_ENUMERATE_SERIALIZED \
-                ,obj \
+                 TYPE_GEN_TYPE_GEN_SERIALIZE_FUNCTIONS_CB \
+                ,(for_ti, obj) \
                 ,seq \
             ) \
         ; \
@@ -223,18 +275,24 @@
 
 /***************************************************************************/
 
-#define TYPE_GEN_TYPE_GEN_METAINFO_ENUM_MEMBERS_CB(unused0, unused1, idx, elem) \
+#define TYPE_GEN_TYPE_GEN_METAINFO_ENUM_MEMBERS_CB(unused, for_ti, idx, elem) \
     BOOST_PP_COMMA_IF(idx) \
-        BOOST_PP_STRINGIZE(BOOST_PP_TUPLE_ELEM(1, elem))
+        BOOST_PP_STRINGIZE( \
+            BOOST_PP_IF( \
+                 for_ti \
+                ,BOOST_PP_TUPLE_ELEM(0, elem) \
+                ,BOOST_PP_TUPLE_ELEM(1, elem) \
+            ) \
+        )
 
-#define TYPE_GEN_TYPE_GEN_METAINFO(tname, seq) \
+#define TYPE_GEN_TYPE_GEN_METAINFO(tname, for_ti, seq) \
     static constexpr const char* _typename() { return BOOST_PP_STRINGIZE(tname); } \
     static constexpr std::size_t _members_count() { return BOOST_PP_SEQ_SIZE(seq); } \
     \
     static constexpr const char *_meta_members_names[] = { \
         BOOST_PP_SEQ_FOR_EACH_I( \
              TYPE_GEN_TYPE_GEN_METAINFO_ENUM_MEMBERS_CB \
-            ,~ \
+            ,for_ti \
             ,seq \
         ) \
         , nullptr \
@@ -271,11 +329,11 @@
             ,seq \
         ) \
         \
-        TYPE_GEN_TYPE_GEN_TUPLE_ELEMS(types_as_tuple, seq); \
+        TYPE_GEN_TYPE_GEN_TUPLE_ELEMS(tname, 0, types_as_tuple, seq) \
         \
         TYPE_GEN_TYPE_GEN_APPLY_FUNCTIONS(0, (*this), seq) \
         \
-        TYPE_GEN_TYPE_GEN_GET_MEMBERS((*this), seq) \
+        TYPE_GEN_TYPE_GEN_GET_MEMBERS(0, (*this), seq) \
         \
         TYPE_GEN_TYPE_GEN_OPERATOR_EQUAL_NOTEQUAL(tname, 0, (*this), seq) \
         \
@@ -283,7 +341,7 @@
         \
         TYPE_GEN_TYPE_GEN_SERIALIZE_FUNCTIONS(0, (*this), seq) \
         \
-        TYPE_GEN_TYPE_GEN_METAINFO(tname, seq) \
+        TYPE_GEN_TYPE_GEN_METAINFO(tname, 0, seq) \
     };
 
 #define TYPE_GEN_TYPE( \
@@ -313,11 +371,11 @@ namespace typegen { \
             :m_o{o} \
         {} \
         \
-        TYPE_GEN_TYPE_GEN_TUPLE_ELEMS(types_as_tuple, seq); \
+        TYPE_GEN_TYPE_GEN_TUPLE_ELEMS(tname, 1, types_as_tuple, seq) \
         \
         TYPE_GEN_TYPE_GEN_APPLY_FUNCTIONS(1, m_o, seq) \
         \
-        TYPE_GEN_TYPE_GEN_GET_MEMBERS(m_o, seq) \
+        TYPE_GEN_TYPE_GEN_GET_MEMBERS(1, m_o, seq) \
         \
         TYPE_GEN_TYPE_GEN_OPERATOR_EQUAL_NOTEQUAL(tname, 1, m_o, seq) \
         \
@@ -325,7 +383,7 @@ namespace typegen { \
         \
         TYPE_GEN_TYPE_GEN_SERIALIZE_FUNCTIONS(1, m_o, seq) \
         \
-        TYPE_GEN_TYPE_GEN_METAINFO(tname, seq) \
+        TYPE_GEN_TYPE_GEN_METAINFO(tname, 1, seq) \
         \
         tname &m_o; \
     }; \

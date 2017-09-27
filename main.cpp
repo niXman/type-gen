@@ -152,8 +152,8 @@ struct type1 {
 TYPE_GEN_ADAPT(
      type1
     ,
-    ((int), a)
-    ((double), b)
+    (a)
+    (b)
 )
 
 bool test_typeinfo_equal() {
