@@ -3,20 +3,15 @@
 #define __type_gen__type_gen_hpp
 
 #include <boost/preprocessor/repetition/repeat.hpp>
-#include <boost/preprocessor/seq/for_each.hpp>
 #include <boost/preprocessor/seq/for_each_i.hpp>
 #include <boost/preprocessor/seq/size.hpp>
-#include <boost/preprocessor/seq/elem.hpp>
 #include <boost/preprocessor/tuple/elem.hpp>
 #include <boost/preprocessor/tuple/size.hpp>
 #include <boost/preprocessor/tuple/enum.hpp>
 #include <boost/preprocessor/control/if.hpp>
-#include <boost/preprocessor/comparison/less.hpp>
 #include <boost/preprocessor/comparison/equal.hpp>
 #include <boost/preprocessor/stringize.hpp>
 #include <boost/preprocessor/punctuation/comma_if.hpp>
-#include <boost/preprocessor/arithmetic/add.hpp>
-#include <boost/preprocessor/facilities/expand.hpp>
 
 #include <functional>
 
