@@ -2,7 +2,6 @@
 #ifndef __type_gen__type_gen_hpp
 #define __type_gen__type_gen_hpp
 
-#include <boost/preprocessor/repetition/repeat.hpp>
 #include <boost/preprocessor/seq/for_each_i.hpp>
 #include <boost/preprocessor/seq/size.hpp>
 #include <boost/preprocessor/tuple/elem.hpp>
