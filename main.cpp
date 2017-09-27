@@ -24,6 +24,28 @@ TYPE_GEN_TYPE(
 
 /***************************************************************************/
 
+TYPE_GEN_TYPE(
+    init_type0
+    ,
+    ((const int), a)
+    ((const double), b)
+    ((const std::array<int, 2>), c)
+)
+TYPE_GEN_TYPE(
+    init_type1
+    ,
+    ((const int), a, (1))
+    ((const double), b, (3.14))
+    ((const std::array<int, 2>), c, ({2,3}))
+)
+TYPE_GEN_TYPE(
+    init_type2
+    ,
+    ((const int &), a)
+    ((const double &), b)
+    ((const std::array<int, 2> &), c)
+)
+
 bool test_init() {
     type0 t0;
 
@@ -31,6 +53,8 @@ bool test_init() {
     TEST_EXPR(t0.a != v);
 
     TEST_EXPR(t0.b != 3.14);
+
+    init_type2 it2{1, 3.14, {{2,3}}};
 
     return true;
 }

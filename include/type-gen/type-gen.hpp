@@ -43,7 +43,12 @@
     )(elem)
 
 #define TYPE_GEN_TYPE_ENUM_CTOR_ARGS_CB(unused0, unused1, idx, elem) \
-    BOOST_PP_COMMA_IF(idx) const BOOST_PP_TUPLE_ENUM(BOOST_PP_TUPLE_ELEM(0, elem)) & arg##idx
+    BOOST_PP_COMMA_IF(idx) \
+        const typename std::remove_const< \
+            typename std::remove_reference< \
+                BOOST_PP_TUPLE_ENUM(BOOST_PP_TUPLE_ELEM(0, elem)) \
+            >::type \
+        >::type & arg##idx
 
 #define TYPE_GEN_TYPE_ENUM_CTOR_ARGS(seq) \
     BOOST_PP_SEQ_FOR_EACH_I( \
